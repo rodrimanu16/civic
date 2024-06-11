@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      - DD_ENV=prod
+      - DD_SERVICE=php
+      - DD_VERSION=2
+      - DD_AGENT_HOST=dd-agent
+      - DD_TRACE_AGENT_PORT=8126
+      - DD_TRACE_DEBUG=false
+    labels:
+      com.datadoghq.tags.env: "prod"
+      com.datadoghq.tags.service: "php"
+      com.datadoghq.tags.version: "2"
+    restart: always
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:latest
+    ports:
+      - "8126:8126/tcp"
+    container_name: datadog-agent
+    environment: 
+      - DD_API_KEY=
+      - DD_LOGS_ENABLED=true
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+      - DD_CONTAINER_EXCLUDE=name:datadog-agent
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+      - DD_APM_ENABLED=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /proc/:/host/proc/:ro
+      - /opt/datadog-agent/run:/opt/datadog-agent/run:rw
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    pid: host
+    restart: unless-stopped
